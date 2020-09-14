@@ -13,7 +13,7 @@ At the risk of leaving out the best part, I'm going to be brief in my discussion
 
 In case you're interested, MI is computed like this:
 
-MI(X, Y) = \sum_{i j} p(x_i, y_j) log( p(x_i, y_j)/p(x_i) p(y_j))
+![](Images/mutualInfo.png)
 
 Computing MI requires performing a binning procedure as if you were constructing a sort of 2-D histogram.  That makes it sound harder than it is.  Really... it's no big deal.  All you're trying to do is get an estimate for that joint probability thingy that remains unknown.
 
