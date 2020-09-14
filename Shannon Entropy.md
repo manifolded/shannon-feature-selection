@@ -1,78 +1,60 @@
-## Hidden Amongst The Disorder
-
-The 2017 StackExchange developer's survey includes a daunting 154 features.  Selecting a small focused group for further analysis requires figuring out which features are relevant and which are just going to pollute your model.
-
-There are a variety of tools available, but I find Shannon entropy to be particularly fascinating.  My training is in physics so I am familiar with the log(N) formulation of entropy from Statistical Mechanics.  To me the Shannon entropy, with its log(1/p), looks very familiar.
 
 
 
+The core idea of this project is to explore using Shannon entropy, more precisely mutual information (MI), for feature selection.  The fact that this exploration took place while analyzing the 2017 StackExchange developer survey dataset is merely incidental.
 
+I would be lying if I claimed that this project came about any way other than me deciding at the outset that I wanted to do something with Shannon entropy.  I'm besotted; it's just so sexy.  I figured Shannon entropy had to have some offspring that would be useful for comparing features.  A little research showed that indeed there was, mutual information^2.  I was elated.
 
-By itself Shannon's discovery doesn't provide us much insight for feature selection.  What we really want is a metric for quantifying the degree of coincidence shared by two features in our dataset. Mutual information, an offshoot of Shannon entropy, provides just such a metric.
-
-Because of this correspondence we treat entropy and information as equivalent.
-
-
-### Towards Mutual Information
-
-As discussed above, the Shannon entropy itself is not terribly useful for feature selection.  If we want to assess the relationship between two features in our dataset, X and Y, we had better compute our Shannon entropy using their joint distribution. 
-
-~~H(X, Y) = - \sum_{i j} p_{i j} log(p_{i j})~~
-
-The last thing we need to do is to subtract off the contributions from each of the individual Shannon entropies.
-
-MI = H(X,Y) - H(X) - H(Y) = - \sum_{i j} p_{i j} log(p_{i j}/p_i p_j)
-
-The quantity that remains is immune to the entropy of each variable separately and instead only indicates the degree to which they are intertwined, i.e. it's exactly what we're looking for.
-
-
-One of the great strengths of mutual information as a metric for quantifying feature relevance is that it can be computed on any variable that can be binned.  It treats categorical variables exactly the way it treats quantitative variables.
+I make no claim that this is a thorough or complete investigation.  I'm just reporting on a quick experiment I did for a bootcamp project.  Nevertheless, I think you'll enjoy it.
 
 ### Implementation
 
-I implemented my code in Python using a Jupyter notebook.  I made heavy use of the pandas data analysis tool and the NumPy scientific computing package.  
+At the risk of leaving out the best part, I'm going to be brief in my discussion of my implementation.  Suffice it to say that computing the mutual information consists mainly of computing the Shannon entropy, but using a two variable joint probability distribution.  
 
+In case you're interested, MI is computed like this:
 
-We can take the log in any base we desire, but the most common practice is to perform the logs base 2.  This allows us to interpret the results as the number of bits required to encode the feature, or pair of features.
+MI(X, Y) = \sum_{i j} p(x_i, y_j) log( p(x_i, y_j)/p(x_i) p(y_j))
 
+Computing MI requires performing a binning procedure as if you were constructing a sort of 2-D histogram.  That makes it sound harder than it is.  Really... it's no big deal.  All you're trying to do is get an estimate for that joint probability thingy that remains unknown.
 
-### Assessing Mutual Information As A Practical Tool
+I wrote my own 2D binning code^3.  There is a `histogram2d()` function included in NumPy but I declined to use it.  That would be no fun.  However, NumPy's code is wildly faster than mine, probably due to some secret vectorization incantations.  At some point I'll have to go take a look at how they did it.
 
-The following plot shows a typical result of a computation of the MI for pairs selected from four features from the 2017 StackExchange Developer Survey dataset.  ~~Salary and JobSatisfaction are quantitative features while HomeRemote and Country are categorical.~~  JobSatisfaction is the respondent's rating between 1 and 10 and thus is treated as quantitative.  So is Salary which is in US dollars and is also represented by an integer.  The Country question asks the respondent to select their country of residence from a long list and is thus  categorical; a similar story for HomeRemote.
+I did take advantage of the existing code, `value_counts()`, to pick out my bins for me.  That's a fiddly job at best and I didn't feel like reinventing the wheel.
 
-Our ultimate goal is to construct a model which will accurately predict the salary of the respondent.  Towards that end we wish to select those features which will provide the most influential inputs to our model.  Of the four candidates shown below the strongest off-diagonal MI score with Salary is for the Country feature.  Salary and Country share a strong MI score of 0.77, almost 1.0.  In contrast, both HomeRemote and JobSatisfaction appear to have negligible MI with Salary.
+### Discussion
 
-[[[The word "influence" suggests a causal connection which MI cannot address.]]]
+A competing method (one we used in class) for evaluating which features were "closest" to each other was to go and fit the model to all the features and then simply examine the coefficients.  There's nothing wrong with that approach, it's just that doing this on categorical features required replacing said feature with handfuls of binary dummy columns.  It wasn't very appealing for a first pass.
 
+With that in mind, here's the big takeaway message.  Mutual information treats categorical and quantitative columns the same way.  No need for dozens of binary dummy columns.  It just works.
+
+Ok.  I've been muttering long enough, let's look at some data.
+
+### Results
+
+Before you even say it, there's no reason the on-diagonal entries below (e.g. comparing Salary with Salary) should be precisely 1.  This isn't correlation data.  That said, knowing all the data in the Salary column tells you a lot about the data in the Salary column.  We shouldn't be too surprised to find that the mutual information between Salary and itself is large.
+
+Just to give a sense of scale, MI is normalized (-ish) so numbers near unity are considered large.  Numbers an order of magnitude smaller are not.  At 0.77 the MI between Salary and Country is big; super big.
 
 ![](Images/Four%20Column%20Heatmap.png)
 
-### The Real Story
+By the way... these results match the coefficient comparison approach perfectly which bolsters my confidence in the mutual information approach.
 
-One problem I encountered is that my binning code is relatively slow and surely inefficient.  Computing the mutual information for four features took an uncomfortable several minutes on my aging MacBook Pro; about the same amount of time required to fit a linear model to all 150 some odd features in the data set.
+And did I mention that we have a takeaway message?  Country is a categorical feature and Salary is quantitative.  They were compared as if it was nothing.  Easy breezy.
 
-On the other hand, fitting that linear model required replacing every categorical feature with a profusion of boolean dummy columns; one for every response.  
-
-We used the coefficients from the linear model to judge how important each feature had been in predicting the response; ~~a somewhat circular argument.~~  In contrast, measuring the MI between any pair of features requires the addition of no dummy columns at all and the idea is to only include those features which we anticipate will be influential based on their MI scores.
-
-Finally, in the absence of time restrictions I would love to have gone on to identify all the (pairs of) features in the data set with a significant MI.  Perhaps Salary isn't the most interesting feature to focus on.
-
-And I fully intend to explore some novel approaches to handling NaNs.  It strikes me that a non-answer to a question contains nearly as much information as an answer.  A NaN represents a valid response and should be treated as such.  In the Shannon entropy context we have the opportunity to treat all variables as categorical and we can count NaNs by putting them in just another bin.
-
-Whether either of these two approaches would lead to a marked improvement in real world modeling remains to be seen.
-
-==========================================================
+=============================================================
 
 ### Bibliography
 
 1. [https://en.wikipedia.org/wiki/Mutual_information](https://en.wikipedia.org/wiki/Mutual_information)
-2. [https://www.wolframalpha.com/input/?i=plot+-p+log+p+from+0+to+1](https://www.wolframalpha.com/input/?i=plot+-p+log+p+from+0+to+1)
-3. [https://en.wikipedia.org/wiki/Entropy_(information_theory)](https://en.wikipedia.org/wiki/Entropy_(information_theory))
-4. [https://amethix.com/entropy-in-machine-learning/](https://amethix.com/entropy-in-machine-learning/)
-5. [https://www.quora.com/What-is-the-relationship-between-entropy-and-information](https://www.quora.com/What-is-the-relationship-between-entropy-and-information)
+2. [https://en.wikipedia.org/wiki/Entropy_(information_theory)](https://en.wikipedia.org/wiki/Entropy_(information_theory))
+3. [https://amethix.com/entropy-in-machine-learning/](https://amethix.com/entropy-in-machine-learning/)
+4. [https://www.quora.com/What-is-the-relationship-between-entropy-and-information](https://www.quora.com/What-is-the-relationship-between-entropy-and-information)
+5. [https://github.com/manifolded/shannon-feature-selection](https://github.com/manifolded/shannon-feature-selection)
 
-==========================================================
+=============================================================
 
 ### Footnotes
 
-1. NumPy actually includes a function called `histogram2d()` which generates 2-D histograms like the one we want.  I chose not to use histogram2d() and instead to implement my own because I anticipate the need for a more sophisticated approach to handling missing data (NaNs).  More on this in a future blog post!
+1. I'm trained as a physicist, and Shannon's entropy looks just like Boltzman's.  Irresistible.
+2. Don't let the 'entropy' vs. 'information' dichotomy confuse you.  As counter-intuitive as it might seem, I double checked and in the context of Shannon entropy they're equivalent.  Huzzah.
+3. I have a fantasy that I'm going to cook up a super clever scheme for handling NaNs so I decided to cook up my own binning code so I could muck about in total freedom.  Maybe this will lead to another blog post.
