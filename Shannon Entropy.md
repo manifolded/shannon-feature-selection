@@ -1,9 +1,9 @@
 
 
 
-The core idea of this project is to explore using Shannon entropy, more precisely mutual information (MI), for feature selection.  The fact that this exploration took place while analyzing the 2017 StackExchange developer survey dataset is merely incidental.
+The core idea of this project is to explore using Shannon entropy, more precisely mutual information (MI), as a tool for feature selection.  The fact that this exploration took place while analyzing the 2017 StackExchange developer survey dataset is merely incidental.
 
-I would be lying if I claimed that this project came about any way other than me deciding at the outset that I wanted to do something with Shannon entropy.  I'm besotted; it's just so sexy.  I figured Shannon entropy had to have some offspring that would be useful for comparing features.  A little research showed that indeed there was, mutual information^2.  I was elated.
+I would be lying if I claimed that this project came about any way other than me deciding at the outset that I wanted to do something with Shannon entropy.  I'm besotted; it's just so sexy.  I figured Shannon entropy had to have some offspring that would be useful for comparing features.  A little research showed that indeed there is; it's called mutual information^2.  I was elated.
 
 I make no claim that this is a thorough or complete investigation.  I'm just reporting on a quick experiment I did for a bootcamp project.  Nevertheless, I think you'll enjoy it.
 
@@ -15,7 +15,7 @@ In case you're interested, MI is computed like this:
 
 ![](Images/mutualInfo.png)
 
-Computing MI requires performing a binning procedure as if you were constructing a sort of 2-D histogram.  That makes it sound harder than it is.  Really... it's no big deal.  All you're trying to do is get an estimate for that joint probability thingy that remains unknown.
+Computing MI requires performing a binning procedure as if you were constructing a sort of 2-D histogram.  That makes it sound harder than it is.  Really... it's no big deal.  All you're trying to do is get an estimate for that joint probability thingy.
 
 I wrote my own 2D binning code^3.  There is a `histogram2d()` function included in NumPy but I declined to use it.  That would be no fun.  However, NumPy's code is wildly faster than mine, probably due to some secret vectorization incantations.  At some point I'll have to go take a look at how they did it.
 
@@ -23,7 +23,7 @@ I did take advantage of the existing code, `value_counts()`, to pick out my bins
 
 ### Discussion
 
-A competing method (one we used in class) for evaluating which features were "closest" to each other was to go and fit the model to all the features and then simply examine the coefficients.  There's nothing wrong with that approach, it's just that doing this on categorical features required replacing said feature with handfuls of binary dummy columns.  It wasn't very appealing for a first pass.
+A competing method (one we used in class) for evaluating which features were closely connected to each other was to go and fit the model to all the features and then simply examine the coefficients.  There's nothing wrong with that approach, it's just the process gets a little ungainly when applied to categorical features required replacing said feature with handfuls of binary dummy columns.  It wasn't very appealing for an exploratory pass.
 
 With that in mind, here's the big takeaway message.  Mutual information treats categorical and quantitative columns the same way.  No need for dozens of binary dummy columns.  It just works.
 
