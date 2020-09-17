@@ -12,7 +12,7 @@ You can also read this very same blog post, complete with images, [here](https:/
 ## Code Content
 If you came here for the code it is in the file `Mutual Information Example.ipynd`.  This is an iPython notebook, thus it is opened in Jupyter.  (In the Python world you must not question this dichotomy!)  
 
-I'm installed my Jupiter whosie-whatsit using [Anaconda](https://www.anaconda.com/products/individual) and usually don't regret doing so.
+I installed my Jupiter whosie-whatsit using [Anaconda](https://www.anaconda.com/products/individual) and usually don't regret doing so.
 
 
 ## License
